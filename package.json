@@ -12,8 +12,7 @@
       "python -m ruff format"
     ],
     "frontend/**/*.{ts,tsx}": [
-      "cd frontend && npx eslint --fix",
-      "cd frontend && npx prettier --write"
+      "npm --prefix frontend run lint -- --fix"
     ]
   },
   "config": {
