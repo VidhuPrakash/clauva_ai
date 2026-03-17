@@ -11,8 +11,9 @@
       "python -m ruff check --fix",
       "python -m ruff format"
     ],
-    "frontend/**/*.{ts,tsx}": [
-      "npm --prefix frontend run lint -- --fix"
+    "frontend/**/*.{ts,tsx,js,jsx}": [
+      "cd frontend && npx eslint --fix",
+      "cd frontend && npx prettier --write"
     ]
   },
   "config": {
