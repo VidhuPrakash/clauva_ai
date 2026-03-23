@@ -25,7 +25,6 @@ def get_client() -> InferenceClient:
 
 
 def ask_llm(prompt: str) -> str:
-    logger.info(f"Sending prompt to {HF_MODEL}...")
 
     try:
         client = get_client()
@@ -47,7 +46,7 @@ def ask_llm(prompt: str) -> str:
         )
 
         result = cast(str, response.choices[0].message.content).strip()
-        logger.success("LLM response received.")
+
         return result
 
     except Exception as e:

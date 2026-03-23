@@ -1,6 +1,5 @@
 from fastapi import HTTPException
 
-from core import logger
 from module.query.service.query_service import get_query_history, save_query
 from services.llm_service import ask_llm
 from services.vector_service import retrieve_chunks
@@ -70,7 +69,6 @@ async def handle_query(
     Returns:
         dict: A dictionary containing the answer, sources, and contract_id.
     """
-    logger.info(f"Retrieving chunks for contract {contract_id}...")
     chunks = retrieve_chunks(
         query=question,
         contract_id=contract_id,
@@ -82,8 +80,6 @@ async def handle_query(
             status_code=404,
             detail="No content found for this contract. Please upload it first.",
         )
-
-    logger.success(f"Retrieved {len(chunks)} relevant chunks.")
 
     #  build prompt
     prompt = _build_prompt(question, chunks)
@@ -114,8 +110,6 @@ async def handle_query(
         token=token,
     )
 
-    logger.success("Query saved to Supabase.")
-
     return {
         "answer": answer,
         "sources": sources,
@@ -139,7 +133,5 @@ async def handle_get_history(
     Returns:
         list[dict]: A list of queries, each containing the question, answer, sources, created_at, and contract_id.
     """
-    logger.info(f"Fetching query history for contract {contract_id}...")
     history = await get_query_history(contract_id, user_id, token)
-    logger.success(f"Found {len(history)} queries.")
     return history
