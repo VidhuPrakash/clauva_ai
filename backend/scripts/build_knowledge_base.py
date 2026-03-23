@@ -59,7 +59,6 @@ def load_cuad_from_json() -> list[dict[str, Any]]:
                         }
                     )
 
-    success(f"Loaded {len(clauses)} labeled clauses from CUAD JSON.")
     return clauses
 
 

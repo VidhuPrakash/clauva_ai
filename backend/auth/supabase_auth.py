@@ -26,13 +26,11 @@ def _get_public_key(kid: str) -> PyJWK:
     global _jwks_cache, _jwks_cache_time
 
     if not _jwks_cache or (time.time() - _jwks_cache_time) > JWKS_CACHE_TTL:
-        logger.info("Fetching JWKS from Supabase...")
         try:
             response = httpx.get(JWKS_URL, timeout=10)
             response.raise_for_status()
             _jwks_cache = {key["kid"]: key for key in response.json().get("keys", [])}
             _jwks_cache_time = time.time()
-            logger.success("JWKS fetched and cached.")
         except Exception as e:
             logger.error(f"Failed to fetch JWKS: {e}")
             if _jwks_cache:

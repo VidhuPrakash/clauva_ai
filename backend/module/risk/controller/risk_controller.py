@@ -2,7 +2,6 @@ import json
 
 from fastapi import HTTPException
 
-from core import logger
 from core.risk_rules import get_explanation, get_severity, is_boilerplate, is_skip_label
 from module.risk.service.risk_service import get_flags, save_flags
 from services.llm_service import ask_llm
@@ -48,10 +47,8 @@ async def handle_risk_scan(
 
     existing_flags = await get_flags(contract_id, token)
     if existing_flags:
-        logger.info(f"Returning cached risk scan for {contract_id}")
         return _format_response(existing_flags, contract_id, cached=True)
 
-    logger.info(f"Fetching all clauses for contract {contract_id}...")
     clauses = get_all_chunks(contract_id)
 
     if not clauses:
@@ -60,12 +57,9 @@ async def handle_risk_scan(
             detail="No clauses found. Please upload the contract first.",
         )
 
-    logger.success(f"Found {len(clauses)} clauses to scan.")
     findings = []
 
     for i, clause in enumerate(clauses):
-        logger.info(f"Scanning clause {i + 1}/{len(clauses)}...")
-
         if len(clause.strip()) < 100:
             continue
 
@@ -99,9 +93,6 @@ async def handle_risk_scan(
             if match["similarity"] < 0.90:
                 confirmed = _verify_with_llm(clause, cuad_label, explanation)
                 if not confirmed:
-                    logger.info(
-                        f"LLM rejected false positive — {cuad_label} on clause {i + 1}"
-                    )
                     continue
 
             findings.append(
@@ -116,19 +107,8 @@ async def handle_risk_scan(
                 }
             )
 
-            logger.warning(
-                f"Risk found — {cuad_label} ({severity}) "
-                f"similarity: {match['similarity']}"
-            )
-
-    logger.success(
-        f"Scan complete — {len(findings)} risk(s) found out of {len(clauses)} clauses."
-    )
-
     if findings:
         await save_flags(contract_id, findings, token)
-        logger.success("Risk flags saved to Supabase.")
-
     return _format_response(findings, contract_id, cached=False)
 
 
