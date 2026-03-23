@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from core.risk_rules import get_explanation, get_severity, is_boilerplate, is_skip_label
 from module.risk.service.risk_service import get_flags, save_flags
 from services.llm_service import ask_llm
+from services.translation_service import is_supported, translate_risk_flags
 from services.vector_service import get_all_chunks, search_knowledge_base
 
 
@@ -43,11 +44,20 @@ async def handle_risk_scan(
     contract_id: str,
     user_id: str,
     token: str,
+    lang: str = "en",
 ) -> dict:
+
+    # validate language
+    if lang != "en" and not is_supported(lang):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported language '{lang}'. Supported: ml, ta, ar, hi, kn, te, en",
+        )
 
     existing_flags = await get_flags(contract_id, token)
     if existing_flags:
-        return _format_response(existing_flags, contract_id, cached=True)
+        translated = translate_risk_flags(existing_flags, lang)
+        return _format_response(translated, contract_id, cached=True, lang=lang)
 
     clauses = get_all_chunks(contract_id)
 
@@ -89,7 +99,6 @@ async def handle_risk_scan(
             severity = get_severity(cuad_label)
             explanation = get_explanation(cuad_label)
 
-            # LLM verification layer — only for borderline scores
             if match["similarity"] < 0.90:
                 confirmed = _verify_with_llm(clause, cuad_label, explanation)
                 if not confirmed:
@@ -109,13 +118,17 @@ async def handle_risk_scan(
 
     if findings:
         await save_flags(contract_id, findings, token)
-    return _format_response(findings, contract_id, cached=False)
+    # translate explanations if needed
+    translated_findings = translate_risk_flags(findings, lang)
+
+    return _format_response(translated_findings, contract_id, cached=False, lang=lang)
 
 
 def _format_response(
     findings: list[dict],
     contract_id: str,
     cached: bool,
+    lang: str = "en",
 ) -> dict:
     high = [f for f in findings if f.get("severity") == "HIGH"]
     medium = [f for f in findings if f.get("severity") == "MEDIUM"]
@@ -124,6 +137,7 @@ def _format_response(
     return {
         "contract_id": contract_id,
         "cached": cached,
+        "lang": lang,
         "summary": {
             "total_flags": len(findings),
             "high": len(high),
