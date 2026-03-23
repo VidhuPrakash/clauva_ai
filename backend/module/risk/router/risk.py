@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from auth.supabase_auth import get_current_user
@@ -51,9 +51,11 @@ async def risk_scan(
     contract_id: str,
     user=Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials = Depends(security),
+    lang: str = Query(default="en"),  # ← add lang param
 ):
     return await handle_risk_scan(
         contract_id=contract_id,
         user_id=user["sub"],
         token=credentials.credentials,
+        lang=lang,
     )
