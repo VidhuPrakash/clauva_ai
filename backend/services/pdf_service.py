@@ -63,7 +63,7 @@ def _split_into_clauses(text: str) -> list[str]:
     If no clauses are found, the text is chunked by paragraph as a fallback.
 
     """
-    pattern = r"(?=(?:WHEREAS|NOW[,\s]+THEREFORE|ARTICLE\s+\w+|Section\s+\d+|\d+\.\s+[A-Z]|\([a-z]\)\s+[A-Z]))"
+    pattern = r"(?=(?:WHEREAS|NOW[,\s]+THEREFORE|ARTICLE\s+\w+|Section\s+\d+|\d+\.\s+[A-Z]|\([a-z]\)\s+[A-Z]|RECITALS|AGREEMENT|IN WITNESS|BE IT KNOWN|THIS AGREEMENT|DEFINITIONS|TERM AND TERMINATION|CONFIDENTIALITY|INDEMNIFICATION|GOVERNING LAW|NON-COMPETE|NON-SOLICITATION|INTELLECTUAL PROPERTY|LIMITATION OF LIABILITY))"
     raw_chunks = re.split(pattern, text)
 
     clauses = []
@@ -73,13 +73,13 @@ def _split_into_clauses(text: str) -> list[str]:
         if len(chunk) < 50:
             continue
         # if chunk is too long, split into smaller pieces by paragraph
-        if len(chunk) > 1000:
+        if len(chunk) > 800:
             sub_chunks = _split_by_paragraph(chunk)
             clauses.extend(sub_chunks)
         else:
             clauses.append(chunk)
 
-    # fallback: if no clauses found, chunk by paragraph
+    # if no clauses found, chunk by paragraph
     if len(clauses) == 0:
         clauses = _split_by_paragraph(text)
 

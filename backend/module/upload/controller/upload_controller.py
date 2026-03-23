@@ -1,8 +1,11 @@
+from typing import Any
+
 from fastapi import HTTPException
 
 from core import logger
 from module.upload.service.contract_service import (
     create_contract,
+    get_contracts,
     update_status,
 )
 from services.pdf_service import extract_and_chunk
@@ -48,3 +51,20 @@ async def handle_upload(
         "chunks_count": len(chunks),
         "status": "ready",
     }
+
+
+async def handle_list_contracts(
+    user_id: str,
+    token: str,
+    page: int,
+    limit: int,
+) -> dict[str, Any]:
+    logger.info(f"Listing contracts for user {user_id} — page {page}")
+    result = await get_contracts(
+        user_id=user_id,
+        token=token,
+        page=page,
+        limit=limit,
+    )
+    logger.success(f"Found {result['pagination']['total']} contracts.")
+    return result
