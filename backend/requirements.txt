@@ -12,3 +12,4 @@ pdfplumber
 pdfminer.six
 requests
 httpx
+colorama
