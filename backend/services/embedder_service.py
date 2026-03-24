@@ -5,6 +5,12 @@ from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 
+HF_API_KEY = os.getenv("HF_API_KEY")
+EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+API_URL = (
+    f"https://api-inference.huggingface.co/pipeline/feature-extraction/{EMBED_MODEL}"
+)
+
 
 _embeddings = None
 

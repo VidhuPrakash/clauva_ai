@@ -11,7 +11,6 @@ from module.admin.router.admin import router as admin_router
 from module.query.router.query import router as query_router
 from module.risk.router.risk import router as risk_router
 from module.upload.router.upload import router as upload_router
-from services.vector_service import get_knowledge_base
 
 _ready = False
 
@@ -51,6 +50,8 @@ def _ensure_knowledge_base() -> None:
     Check if CUAD knowledge base exists in ChromaDB.
     If empty (first deploy or reset), rebuild it automatically.
     """
+    from services.vector_service import get_knowledge_base
+
     kb = get_knowledge_base()
     existing = kb.get()
 
@@ -117,8 +118,8 @@ def _ensure_knowledge_base() -> None:
 async def lifespan(app: FastAPI):
     logger.startup("Clauva AI starting up...")
 
-    # start heavy work in background — server binds to port immediately
-    asyncio.create_task(_background_startup())
+    loop = asyncio.get_event_loop()
+    loop.create_task(_background_startup())
 
     logger.success("Server ready — background services loading...")
     yield
