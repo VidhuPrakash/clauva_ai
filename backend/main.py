@@ -1,7 +1,7 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
-import httpx
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,8 +11,39 @@ from module.admin.router.admin import router as admin_router
 from module.query.router.query import router as query_router
 from module.risk.router.risk import router as risk_router
 from module.upload.router.upload import router as upload_router
-from services.embedder_service import get_embeddings
-from services.vector_service import get_collection, get_knowledge_base
+from services.vector_service import get_knowledge_base
+
+_ready = False
+
+
+async def _background_startup() -> None:
+    global _ready
+    try:
+        logger.startup("Loading HuggingFace embedding model...")
+        from services.embedder_service import get_embeddings
+
+        get_embeddings()
+        logger.success("Embedding model ready.")
+
+        logger.startup("Initializing ChromaDB...")
+        from services.vector_service import get_collection
+
+        get_collection()
+        logger.success("ChromaDB ready.")
+
+        logger.startup("Checking CUAD knowledge base...")
+        _ensure_knowledge_base()
+
+        logger.startup("Initializing LLM client...")
+        from services.llm_service import get_client
+
+        get_client()
+        logger.success(f"LLM ready — {os.getenv('HF_MODEL')}")
+
+        _ready = True
+        logger.success("All background services ready.")
+    except Exception as e:
+        logger.error(f"Background startup error: {e}")
 
 
 def _ensure_knowledge_base() -> None:
@@ -84,44 +115,15 @@ def _ensure_knowledge_base() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     logger.startup("Clauva AI starting up...")
 
-    # warm up JWKS cache on startup
-    logger.startup("Fetching Supabase JWKS public keys...")
-    try:
-        # trigger a fetch by calling with a dummy kid — it will cache all keys
-        supabase_url = os.getenv("SUPABASE_URL")
-        jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
-        response = httpx.get(jwks_url, timeout=10)
-        response.raise_for_status()
-        import time
+    # start heavy work in background — server binds to port immediately
+    asyncio.create_task(_background_startup())
 
-        keys = {k["kid"]: k for k in response.json().get("keys", [])}
-        # update the module-level cache directly
-        import auth.supabase_auth as auth_module
-
-        auth_module._jwks_cache = keys
-        auth_module._jwks_cache_time = time.time()
-        logger.success(f"JWKS cached — {len(keys)} key(s) loaded.")
-    except Exception as e:
-        logger.warning(f"Could not prefetch JWKS: {e} — will fetch on first request.")
-
-    logger.startup("Loading embedding model...")
-    get_embeddings()
-    logger.success("Embedding model ready.")
-
-    logger.startup("Initializing ChromaDB...")
-    get_collection()
-    logger.success("ChromaDB ready.")
-
-    logger.startup("Checking CUAD knowledge base...")
-    _ensure_knowledge_base()
-
-    logger.success("Clauva AI is ready to accept requests.")
+    logger.success("Server ready — background services loading...")
     yield
 
-    logger.shutdown("Clauva AI shutting down. Goodbye.")
+    logger.shutdown("Clauva AI shutting down.")
 
 
 app = FastAPI(title="Clauva AI API", version="1.0.0", lifespan=lifespan)
@@ -145,6 +147,14 @@ app.include_router(admin_router)
 @app.get("/health")
 def health():
     return {"status": "ok", "project": "Clauva AI"}
+
+
+@app.get("/ready")
+def ready():
+    return {
+        "ready": _ready,
+        "message": "All services ready" if _ready else "Services loading...",
+    }
 
 
 @app.get("/me")
