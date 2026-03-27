@@ -1,5 +1,5 @@
 {
-  "name": "legalmind",
+  "name": "clauva.ai",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -12,8 +12,8 @@
       "python -m ruff format"
     ],
     "frontend/**/*.{ts,tsx,js,jsx}": [
-      "cd frontend && npx eslint --fix",
-      "cd frontend && npx prettier --write"
+      "./frontend/node_modules/.bin/eslint --fix --no-warn-ignored --config ./frontend/eslint.config.mjs",
+      "./frontend/node_modules/.bin/prettier --write"
     ]
   },
   "config": {
