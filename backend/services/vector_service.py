@@ -98,7 +98,7 @@ def get_knowledge_base() -> Chroma:
 def search_knowledge_base(
     clause: str,
     top_k: int = 3,
-    score_threshold: float = 0.75,
+    score_threshold: float = 0.45,
 ) -> list[dict[str, Any]]:
     kb = get_knowledge_base()
 
