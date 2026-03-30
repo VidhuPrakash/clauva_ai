@@ -4,7 +4,7 @@ import sys
 try:
     import uvicorn
 
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 7860))
     print(f"Starting uvicorn on port {port}", flush=True)
     uvicorn.run(
         "main:app",
