@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 from module.query.service.query_service import get_query_history, save_query
-from services.llm_service import ask_llm
+from services.llm_service import ask_qa_llm
 from services.vector_service import retrieve_chunks
 
 
@@ -29,15 +29,14 @@ def _build_prompt(question: str, chunks: list[dict]) -> str:
         [f"Clause {i + 1}:\n{chunk['text']}" for i, chunk in enumerate(chunks)]
     )
 
-    return f"""You are a legal contract analyst. \
-Answer the user's question using ONLY the contract clauses provided below.
+    return f"""You are a legal contract analyst. Answer the user's question based on the contract clauses provided below.
 
 Rules:
-- If the answer is not in the clauses, say exactly: \
-"This information is not found in the provided contract."
-- Never use knowledge outside the contract clauses.
+- Use ONLY the information present in the provided clauses.
+- For broad questions (e.g. "what is this about", "summarize"), give a concise overview based on what the clauses reveal.
+- For specific questions, cite which clause number your answer comes from.
+- Only say "This information is not found in the provided contract." if the clauses contain absolutely no relevant information.
 - Be concise and clear.
-- Always cite which clause number your answer comes from.
 
 CONTRACT CLAUSES:
 {context}
@@ -72,7 +71,7 @@ async def handle_query(
     chunks = retrieve_chunks(
         query=question,
         contract_id=contract_id,
-        top_k=5,
+        top_k=10,
     )
 
     if not chunks:
@@ -86,7 +85,7 @@ async def handle_query(
 
     #  ask LLM
     try:
-        answer = ask_llm(prompt)
+        answer = ask_qa_llm(prompt)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

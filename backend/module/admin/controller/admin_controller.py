@@ -3,11 +3,14 @@ from typing import Any
 from fastapi import HTTPException
 
 from module.admin.service.profile_service import (
+    delete_user,
+    get_all_contracts,
     get_all_users,
     get_stats,
     get_user_by_id,
     get_user_contracts,
     get_user_queries,
+    update_user,
 )
 
 
@@ -20,6 +23,13 @@ async def handle_get_stats() -> dict[str, Any]:
     """
     stats = await get_stats()
     return stats
+
+
+async def handle_get_all_contracts(
+    page: int,
+    limit: int,
+) -> dict[str, Any]:
+    return await get_all_contracts(page=page, limit=limit)
 
 
 async def handle_get_all_users(
@@ -72,3 +82,27 @@ async def handle_get_user_detail(user_id: str) -> dict[str, Any]:
             "total_queries": len(queries),
         },
     }
+
+
+async def handle_update_user(
+    user_id: str,
+    role: str,
+    full_name: str | None = None,
+    country: str | None = None,
+    language: str | None = None,
+) -> dict[str, Any]:
+    profile = await get_user_by_id(user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="User not found")
+    updated = await update_user(
+        user_id, role, full_name=full_name, country=country, language=language
+    )
+    return updated or {}
+
+
+async def handle_delete_user(user_id: str) -> dict[str, str]:
+    profile = await get_user_by_id(user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="User not found")
+    await delete_user(user_id)
+    return {"message": "User deleted"}
