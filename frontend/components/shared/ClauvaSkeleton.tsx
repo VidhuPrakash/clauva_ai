@@ -9,3 +9,5 @@ export function ClauvaSkeletonBlock({ className }: SkeletonProps) {
     <div className={cn('animate-pulse rounded-md bg-bg-elevated', className)} />
   )
 }
+
+export const ClauvaSkeleton = ClauvaSkeletonBlock

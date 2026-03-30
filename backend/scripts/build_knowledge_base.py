@@ -16,7 +16,9 @@ load_dotenv()
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
 KNOWLEDGE_BASE_COLLECTION = "knowledge_base"
 BATCH_SIZE = 100
-CUAD_JSON_PATH = os.path.join(os.path.dirname(__file__), "CUAD_v1.json")
+CUAD_JSON_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "CUAD_v1.json"
+)
 
 
 def load_cuad_from_json() -> list[dict[str, Any]]:

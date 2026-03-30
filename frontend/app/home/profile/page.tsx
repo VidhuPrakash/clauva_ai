@@ -6,6 +6,7 @@ import { ClauvaInput } from '@/components/shared/ClauvaInput'
 import { ClauvaButton } from '@/components/shared/ClauvaButton'
 import { useAuthStore } from '@/store/authStore'
 import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/api'
 import { User, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import type { Language } from '@/store/authStore'
@@ -41,6 +42,31 @@ const LANGUAGES: { code: Language; label: string }[] = [
   { code: 'ml', label: 'Malayalam' },
   { code: 'ta', label: 'Tamil' },
   { code: 'te', label: 'Telugu' },
+]
+
+const TIMEZONES = [
+  'Africa/Nairobi',
+  'America/Chicago',
+  'America/Los_Angeles',
+  'America/New_York',
+  'America/Sao_Paulo',
+  'Asia/Calcutta',
+  'Asia/Dubai',
+  'Asia/Jakarta',
+  'Asia/Karachi',
+  'Asia/Kolkata',
+  'Asia/Riyadh',
+  'Asia/Seoul',
+  'Asia/Shanghai',
+  'Asia/Singapore',
+  'Asia/Tokyo',
+  'Australia/Sydney',
+  'Europe/Berlin',
+  'Europe/London',
+  'Europe/Moscow',
+  'Europe/Paris',
+  'Pacific/Auckland',
+  'UTC',
 ]
 
 export default function ProfilePage() {
@@ -79,11 +105,12 @@ export default function ProfilePage() {
     setSaving(true)
 
     // 1. Update Supabase Auth user_metadata
-    const { data, error: authErr } = await supabase.auth.updateUser({
+    const { error: authErr } = await supabase.auth.updateUser({
       data: {
         full_name: localName,
         country: localCountry,
         language: localLanguage,
+        timezone,
       },
     })
 
@@ -93,17 +120,16 @@ export default function ProfilePage() {
       return
     }
 
-    // 2. Sync profiles table
-    const { error: dbErr } = await supabase.from('profiles').upsert({
-      id: data.user.id,
-      email: data.user.email,
-      country: localCountry,
-      timezone,
-      language: localLanguage,
-    })
-
-    if (dbErr) {
-      setError(dbErr.message)
+    // 2. Sync profiles table via backend (bypasses RLS)
+    try {
+      await api.patch('/me/profile', {
+        country: localCountry,
+        timezone,
+        language: localLanguage,
+      })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Failed to save profile'
+      setError(msg)
       setSaving(false)
       return
     }
@@ -154,7 +180,26 @@ export default function ProfilePage() {
             placeholder="Your name"
           />
           <ClauvaInput label="Email" value={email} disabled />
-          <ClauvaInput label="Timezone" value={timezone} disabled />
+
+          <div className="space-y-1">
+            <label className="text-sm font-body font-medium text-text-primary">
+              Timezone
+            </label>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full rounded-md border border-border bg-bg-surface text-text-primary text-sm font-body px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              {!TIMEZONES.includes(timezone) && (
+                <option value={timezone}>{timezone}</option>
+              )}
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">

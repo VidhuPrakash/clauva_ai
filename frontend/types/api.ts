@@ -72,6 +72,7 @@ export interface RiskScanResponse {
   contract_id: string
   cached: boolean
   lang: string
+  overall_review?: string
   summary: RiskSummary
   flags: RiskFlag[]
 }
@@ -81,6 +82,24 @@ export interface AdminStats {
   total_contracts: number
   total_queries: number
   total_risk_flags: number
+  new_users_week: number
+  new_users_month: number
+  new_contracts_week: number
+  new_contracts_month: number
+  queries_week: number
+  contracts_ready: number
+  contracts_processing: number
+  contracts_failed: number
+  avg_contracts_per_user: number
+}
+
+export interface AdminContract {
+  id: string
+  name: string
+  status: ContractStatus
+  created_at: string
+  user_id: string
+  user_email: string
 }
 
 export interface AdminUser {
@@ -89,4 +108,7 @@ export interface AdminUser {
   role: string
   created_at: string
   contract_count: number
+  full_name?: string
+  country?: string
+  language?: string
 }

@@ -9,6 +9,7 @@ import type {
   RiskFlag,
   AdminStats,
   AdminUser,
+  AdminContract,
   Pagination,
 } from '@/types/api'
 
@@ -53,8 +54,8 @@ export const getQAHistory = (contract_id: string) =>
   api.get<QueryHistoryEntry[]>(`/query/history/${contract_id}`)
 
 // Risk Scan
-export const runRiskScan = (contract_id: string, lang = 'en') =>
-  api.get<RiskScanResponse>(`/risk-scan/${contract_id}?lang=${lang}`)
+export const runRiskScan = (contract_id: string) =>
+  api.get<RiskScanResponse>(`/risk-scan/${contract_id}`)
 export const getRiskFlags = (contract_id: string) =>
   api.get<RiskFlag[]>(`/risk-scan/flags/${contract_id}`)
 
@@ -66,3 +67,18 @@ export const getAdminUsers = (page = 1, limit = 10) =>
   )
 export const getAdminUserDetail = (user_id: string) =>
   api.get<AdminUser>(`/admin/users/${user_id}`)
+export const updateAdminUser = (
+  user_id: string,
+  data: {
+    role: string
+    full_name?: string
+    country?: string
+    language?: string
+  }
+) => api.patch<AdminUser>(`/admin/users/${user_id}`, data)
+export const deleteAdminUser = (user_id: string) =>
+  api.delete(`/admin/users/${user_id}`)
+export const getAdminContracts = (page = 1, limit = 10) =>
+  api.get<{ contracts: AdminContract[]; pagination: Pagination }>(
+    `/admin/contracts?page=${page}&limit=${limit}`
+  )

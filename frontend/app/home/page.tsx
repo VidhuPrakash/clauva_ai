@@ -16,6 +16,7 @@ import {
 import { ClauvaCard } from '@/components/shared/ClauvaCard'
 import { ClauvaButton } from '@/components/shared/ClauvaButton'
 import { useAuthStore } from '@/store/authStore'
+import { useContractStore } from '@/store/contractStore'
 import { uploadContract, getContracts } from '@/lib/api'
 import type { Contract, Pagination } from '@/types/api'
 import { cn } from '@/lib/utils'
@@ -25,6 +26,7 @@ type UploadState = 'idle' | 'uploading' | 'processing' | 'success' | 'error'
 export default function HomePage() {
   const { fullName } = useAuthStore()
   const router = useRouter()
+  const { setActiveContract } = useContractStore()
 
   // Upload state
   const [uploadState, setUploadState] = useState<UploadState>('idle')
@@ -304,9 +306,10 @@ export default function HomePage() {
                 >
                   <ClauvaCard
                     className="hover:border-text-muted transition-colors cursor-pointer group"
-                    onClick={() =>
+                    onClick={() => {
+                      setActiveContract(contract)
                       router.push(`/home/contracts/${contract.id}`)
-                    }
+                    }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 min-w-0">

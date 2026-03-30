@@ -49,9 +49,12 @@ function LoginForm() {
     }
 
     setSession(data.session)
-    const role =
+
+    const role: string =
       data.session?.user?.app_metadata?.role ??
-      data.session?.user?.user_metadata?.role
+      data.session?.user?.user_metadata?.role ??
+      'user'
+
     router.push(role === 'admin' ? '/admin' : '/home')
   }
 

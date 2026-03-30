@@ -1,9 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const response = NextResponse.next({ request })
+
+  // IMPORTANT: supabaseResponse must be reassigned inside setAll so that
+  // refreshed session tokens are written to both the request and response.
+  // If you use a plain `response` variable, token rotation silently fails
+  // and the user gets kicked back to /login on every navigation.
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,9 +17,17 @@ export async function proxy(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
+          // Step 1: write refreshed cookies into the request so subsequent
+          //         code in this middleware sees the updated values
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          // Step 2: recreate the response with the mutated request so the
+          //         updated cookies are forwarded to the browser
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
     }
@@ -35,7 +48,7 @@ export async function proxy(request: NextRequest) {
     if (!isAuthRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    return response
+    return supabaseResponse
   }
 
   // Block unverified email users from the app
@@ -53,7 +66,7 @@ export async function proxy(request: NextRequest) {
       })
       return redirectRes
     }
-    return response
+    return supabaseResponse
   }
 
   // Authenticated + verified users shouldn't access auth routes
@@ -68,13 +81,15 @@ export async function proxy(request: NextRequest) {
 
   // Only admins can access /admin routes
   if (pathname.startsWith('/admin')) {
-    const role = user.app_metadata?.role ?? user.user_metadata?.role ?? 'user'
+    const role: string =
+      user.app_metadata?.role ?? user.user_metadata?.role ?? 'user'
+
     if (role !== 'admin') {
       return NextResponse.redirect(new URL('/home', request.url))
     }
   }
 
-  return response
+  return supabaseResponse
 }
 
 export const config = {

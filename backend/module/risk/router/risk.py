@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, Query
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends
 
-from auth.supabase_auth import get_current_user
+from auth.supabase_auth import get_current_user, get_token
 from module.risk.controller.risk_controller import (
     handle_get_flags,
     handle_risk_scan,
@@ -9,7 +8,6 @@ from module.risk.controller.risk_controller import (
 from services.vector_service import get_all_chunks, search_knowledge_base
 
 router = APIRouter(prefix="/risk-scan", tags=["risk"])
-security = HTTPBearer()
 
 
 @router.get("/debug/{contract_id}")
@@ -38,24 +36,21 @@ async def debug_scan(
 async def get_flags(
     contract_id: str,
     user=Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    token: str = Depends(get_token),
 ):
-    return await handle_get_flags(
-        contract_id=contract_id,
-        token=credentials.credentials,
-    )
+    return await handle_get_flags(contract_id=contract_id, token=token)
 
 
 @router.get("/{contract_id}")
 async def risk_scan(
     contract_id: str,
     user=Depends(get_current_user),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    lang: str = Query(default="en"),  # ← add lang param
+    token: str = Depends(get_token),
 ):
+    lang = user["user_metadata"].get("language", "en")
     return await handle_risk_scan(
         contract_id=contract_id,
         user_id=user["sub"],
-        token=credentials.credentials,
+        token=token,
         lang=lang,
     )
