@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface LogoProps {
@@ -12,15 +13,22 @@ export function Logo({ className, size = 'md' }: LogoProps) {
     lg: 'text-3xl',
   }
 
+  const imgSizes = {
+    sm: 24,
+    md: 32,
+    lg: 48,
+  }
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="relative">
-        <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-          <span className="text-primary-foreground font-display font-bold text-sm">
-            C
-          </span>
-        </div>
-      </div>
+      <Image
+        src="/clauva.png"
+        alt="Clauva AI"
+        width={imgSizes[size]}
+        height={imgSizes[size]}
+        className="object-contain"
+        priority
+      />
       <span
         className={cn(
           'font-display font-bold text-text-primary tracking-tight',

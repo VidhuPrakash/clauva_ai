@@ -1,12 +1,10 @@
 import os
 import sys
 
-print(f"PORT env: {os.environ.get('PORT', 'not set')}", flush=True)
-
 try:
     import uvicorn
 
-    port = int(os.environ.get("PORT", 8000))
+    port = int(os.environ.get("PORT", 7860))
     print(f"Starting uvicorn on port {port}", flush=True)
     uvicorn.run(
         "main:app",
