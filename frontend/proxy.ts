@@ -4,6 +4,18 @@ import { type NextRequest, NextResponse } from 'next/server'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Always pass through Next.js internals and public static assets regardless
+  // of auth state — unauthenticated users on login/signup pages still need
+  // images, fonts, and other public files to load correctly.
+  if (
+    pathname.startsWith('/_next/') ||
+    /\.(?:png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|webmanifest|txt|xml|json)$/i.test(
+      pathname
+    )
+  ) {
+    return NextResponse.next({ request })
+  }
+
   // IMPORTANT: supabaseResponse must be reassigned inside setAll so that
   // refreshed session tokens are written to both the request and response.
   // If you use a plain `response` variable, token rotation silently fails
@@ -97,9 +109,9 @@ export const config = {
     /*
      * Match all routes except:
      * - _next/static, _next/image (Next.js internals)
-     * - favicon.ico, robots.txt
+     * - Public static files with known extensions (images, fonts, manifests…)
      * - API routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|api/).*)',
+    '/((?!_next/static|_next/image|api/|.*\\.(?:png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|webmanifest|txt|xml|json)$).*)',
   ],
 }

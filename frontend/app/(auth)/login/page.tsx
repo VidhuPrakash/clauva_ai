@@ -103,7 +103,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-8.5 text-text-muted hover:text-text-secondary"
+              className="absolute right-3 bottom-3 text-text-muted hover:text-text-secondary"
             >
               {showPassword ? (
                 <EyeOff className="w-4 h-4" />
