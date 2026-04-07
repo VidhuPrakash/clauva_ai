@@ -108,7 +108,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
           <Logo size="sm" />
           <p className="text-xs font-body text-text-muted">
-            © 2025 Clauva AI. All rights reserved.
+            © {new Date().getFullYear()} Clauva AI. All rights reserved.
           </p>
         </div>
       </footer>
