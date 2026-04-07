@@ -1,5 +1,7 @@
 # Clauva AI
 
+**Live:** [clauva-ai.vidhuprakash.dev](https://clauva-ai.vidhuprakash.dev)
+
 An AI-powered legal contract analysis platform. Upload a PDF contract and get instant natural language Q&A, automated risk scanning against 41 CUAD clause categories, and multilingual output — all backed by a RAG pipeline running on Groq LLMs and ChromaDB.
 
 ---
@@ -19,7 +21,7 @@ An AI-powered legal contract analysis platform. Upload a PDF contract and get in
 
 | Layer            | Technology                                                                         |
 | ---------------- | ---------------------------------------------------------------------------------- |
-| Frontend         | Next.js 16 (App Router), React 19, TypeScript 5                                    |
+| Frontend         | Next.js 16.1.6 (App Router, Turbopack), React 19, TypeScript 5                     |
 | Styling          | Tailwind CSS v4, Radix UI, shadcn/ui, Framer Motion                                |
 | State            | Zustand v5 with localStorage persistence                                           |
 | Backend          | FastAPI 0.135, Python 3.11                                                         |
@@ -64,14 +66,15 @@ legalmind/
 └── frontend/                 # Next.js application
     ├── app/
     │   ├── (auth)/           # login, signup, forgot-password
-    │   ├── home/             # dashboard, contract detail (Q&A + risk tabs), profile
-    │   └── admin/            # admin dashboard, users, contracts
+    │   ├── home/             # dashboard, contract detail (Q&A + risk tabs), profile    │   ├── home/
+    │   │   ├── contracts/[id]/   # contract workspace (Q&A + risk tabs)
+    │   │   └── profile/          # user profile settings (name, country, language)    │   └── admin/            # admin dashboard, users, contracts
     ├── components/           # shared UI primitives, layout, auth panel
     ├── store/                # authStore, contractStore, readinessStore
     ├── lib/
     │   ├── api.ts            # Axios client with JWT interceptor
     │   └── supabase.ts
-    └── middleware.ts         # Auth guards and redirects
+    └── proxy.ts              # Auth middleware and route guards
 ```
 
 ---
@@ -100,6 +103,8 @@ python start.py
 ```
 
 The server runs on `http://localhost:8000`. On first boot, a background task loads the embedding model and populates the CUAD knowledge base into ChromaDB — poll `GET /ready` to track progress.
+
+> **Production:** The backend is deployed on **AWS** (Docker container). Set `FRONTEND_URL` to the production frontend origin and `PORT` as required by the target service.
 
 #### Required environment variables
 
@@ -133,8 +138,10 @@ The app runs on `http://localhost:3000`. Set `NEXT_PUBLIC_API_URL=http://localho
 ```bash
 cd backend
 docker build -t clauva-backend .
-docker run -p 7860:7860 --env-file .env clauva-backend
+docker run -p 8000:8000 --env-file .env clauva-backend
 ```
+
+The production backend image is deployed on **AWS**. The same `Dockerfile` is used for local development and cloud deployment.
 
 ---
 
@@ -265,19 +272,22 @@ The frontend `ReadinessBar` polls `/ready` and blocks Q&A / risk-scan UI until t
 
 ## API Reference
 
-| Method  | Endpoint                         | Description                                |
-| ------- | -------------------------------- | ------------------------------------------ |
-| `GET`   | `/ready`                         | Backend readiness (model loaded, KB built) |
-| `POST`  | `/upload`                        | Upload and process a PDF contract          |
-| `GET`   | `/upload`                        | List contracts for the authenticated user  |
-| `POST`  | `/query`                         | Ask a question about a contract            |
-| `GET`   | `/query/history/{contract_id}`   | Q&A history for a contract                 |
-| `GET`   | `/risk-scan/{contract_id}`       | Run (or return cached) risk scan           |
-| `GET`   | `/risk-scan/flags/{contract_id}` | Retrieve stored risk flags                 |
-| `PATCH` | `/me/profile`                    | Update user profile                        |
-| `GET`   | `/admin/stats`                   | Platform usage stats (admin only)          |
-| `GET`   | `/admin/users`                   | List all users (admin only)                |
-| `GET`   | `/admin/contracts`               | List all contracts (admin only)            |
+| Method   | Endpoint                         | Description                                |
+| -------- | -------------------------------- | ------------------------------------------ |
+| `GET`    | `/ready`                         | Backend readiness (model loaded, KB built) |
+| `POST`   | `/upload`                        | Upload and process a PDF contract          |
+| `GET`    | `/upload`                        | List contracts for the authenticated user  |
+| `POST`   | `/query`                         | Ask a question about a contract            |
+| `GET`    | `/query/history/{contract_id}`   | Q&A history for a contract                 |
+| `GET`    | `/risk-scan/{contract_id}`       | Run (or return cached) risk scan           |
+| `GET`    | `/risk-scan/flags/{contract_id}` | Retrieve stored risk flags                 |
+| `PATCH`  | `/me/profile`                    | Update user profile                        |
+| `GET`    | `/admin/stats`                   | Platform usage stats (admin only)          |
+| `GET`    | `/admin/users`                   | List all users (admin only)                |
+| `GET`    | `/admin/users/{user_id}`         | Get user detail (admin only)               |
+| `PATCH`  | `/admin/users/{user_id}`         | Update user role / profile (admin only)    |
+| `DELETE` | `/admin/users/{user_id}`         | Delete a user (admin only)                 |
+| `GET`    | `/admin/contracts`               | List all contracts (admin only)            |
 
 All protected endpoints require a `Authorization: Bearer <supabase_jwt>` header.
 
