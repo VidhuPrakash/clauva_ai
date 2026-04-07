@@ -2,6 +2,7 @@ import asyncio
 import os
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,6 +16,8 @@ from module.risk.router.risk import router as risk_router
 from module.upload.router.upload import router as upload_router
 
 _ready = False
+
+load_dotenv()
 
 
 @asynccontextmanager
@@ -37,6 +40,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Clauva AI API", version="1.0.0", lifespan=lifespan)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+print("FRONTEND_URL:", FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
