@@ -49,15 +49,16 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Unauthenticated users can only access auth routes
+  // Unauthenticated users can only access public / auth routes
   if (!user) {
-    const isAuthRoute =
+    const isPublicRoute =
+      pathname === '/' ||
       pathname.startsWith('/login') ||
       pathname.startsWith('/signup') ||
       pathname.startsWith('/forgot-password') ||
       pathname.startsWith('/reset-password')
 
-    if (!isAuthRoute) {
+    if (!isPublicRoute) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
     return supabaseResponse
